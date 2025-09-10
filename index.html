@@ -1,0 +1,379 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amila Workout Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        @keyframes gradientAnimation {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            background: linear-gradient(-45deg, #0f172a, #1e293b, #0f172a, #334155);
+            background-size: 400% 400%;
+            animation: gradientAnimation 15s ease infinite;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in-down {
+            animation: fadeInDown 0.8s ease-out forwards;
+        }
+
+        .animate-fade-in-up {
+            opacity: 0; /* Start hidden */
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        .main-container {
+            max-width: 420px;
+            margin: auto;
+        }
+
+        .category-card {
+            background: rgba(30, 41, 59, 0.6); /* Translucent dark slate */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+            .category-card:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+                border-color: rgba(107, 226, 255, 0.4);
+            }
+
+        .workout-view {
+            transition: opacity 0.5s ease-in-out;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .control-btn {
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+
+            .control-btn:active {
+                transform: scale(0.95);
+            }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen p-4">
+
+    <div class="main-container w-full">
+        <!-- Main View: Category Selection -->
+        <div id="main-view">
+            <header class="text-center mb-10 animate-fade-in-down">
+                <h1 class="text-4xl font-bold text-cyan-400">Amila Workout Hub</h1>
+                <p class="text-gray-400 mt-2">Your journey to a stronger you starts now.</p>
+            </header>
+            <main id="category-grid" class="grid grid-cols-2 gap-4">
+                <!-- Categories will be injected here -->
+            </main>
+        </div>
+
+        <!-- Workout View -->
+        <div id="workout-view" class="hidden">
+            <header class="flex items-center mb-6">
+                <button id="back-btn" class="text-cyan-400 text-2xl p-2 rounded-full hover:bg-gray-700">&larr;</button>
+                <h2 id="workout-title" class="text-2xl font-bold text-center flex-grow">Workout</h2>
+            </header>
+
+            <div class="video-wrapper bg-black rounded-lg shadow-lg mb-4 overflow-hidden">
+                <video id="workout-video" class="w-full aspect-video" src="" muted loop playsinline autoplay title="Workout Video"></video>
+            </div>
+
+            <div id="muscle-info" class="text-center mb-4 text-cyan-300 font-semibold">
+                <!-- Targeted muscles will be shown here -->
+            </div>
+
+            <div class="info-panel text-center">
+                <h3 id="exercise-name" class="text-3xl font-bold text-cyan-400">Exercise Name</h3>
+                <p id="exercise-reps" class="text-gray-300 text-xl mt-1">12 Reps</p>
+            </div>
+
+            <div class="timer-panel text-center my-6">
+                <p class="text-6xl font-bold tracking-wider" id="timer">00:30</p>
+                <p class="text-gray-500">Time Remaining</p>
+            </div>
+
+            <div class="controls flex justify-center items-center gap-4">
+                <button id="prev-btn" class="control-btn bg-gray-700 text-white font-bold py-3 px-6 rounded-full">Prev</button>
+                <button id="pause-play-btn" class="control-btn bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-4 px-8 rounded-full text-lg">Start</button>
+                <button id="next-btn" class="control-btn bg-gray-700 text-white font-bold py-3 px-6 rounded-full">Next</button>
+            </div>
+        </div>
+
+        <footer class="text-center text-gray-600 mt-8 text-sm">
+            A Product of DubeDevelopers
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mainView = document.getElementById('main-view');
+            const workoutView = document.getElementById('workout-view');
+            const categoryGrid = document.getElementById('category-grid');
+            const backBtn = document.getElementById('back-btn');
+            const workoutTitleEl = document.getElementById('workout-title');
+            const exerciseNameEl = document.getElementById('exercise-name');
+            const exerciseRepsEl = document.getElementById('exercise-reps');
+            const timerEl = document.getElementById('timer');
+            const prevBtn = document.getElementById('prev-btn');
+            const pausePlayBtn = document.getElementById('pause-play-btn');
+            const nextBtn = document.getElementById('next-btn');
+            const muscleInfoEl = document.getElementById('muscle-info');
+            const videoEl = document.getElementById('workout-video');
+
+            let currentWorkout = null;
+            let currentExerciseIndex = 0;
+            let timerInterval = null;
+            let timeLeft = 0;
+            let isPaused = true;
+
+            // --- WORKOUT DATA with local video file names ---
+            const workouts = {
+                'Weight Loss': {
+                    icon: '🔥',
+                    exercises: [
+                        { name: "Jumping Jacks", duration: 30, reps: '30 sec', videoFile: 'jumping_jacks.mp4', targetMuscles: ['Full Body', 'Cardio'] },
+                        { name: "High Knees", duration: 30, reps: '30 sec', videoFile: 'high_knees.mp4', targetMuscles: ['Quads', 'Glutes', 'Core'] },
+                        { name: "Burpees", duration: 45, reps: '45 sec', videoFile: 'burpees.mp4', targetMuscles: ['Full Body'] },
+                        { name: "Mountain Climbers", duration: 30, reps: '30 sec', videoFile: 'mountain_climbers.mp4', targetMuscles: ['Core', 'Shoulders', 'Quads'] },
+                        { name: "Rest", duration: 30, reps: 'Take a break!', videoFile: null, targetMuscles: [] },
+                    ]
+                },
+                'Get Lean': {
+                    icon: '⚡️',
+                    exercises: [
+                        { name: "Push-ups", duration: 45, reps: '15 reps', videoFile: 'push-ups.mp4', targetMuscles: ['Chest', 'Shoulders', 'Triceps'] },
+                        { name: "Squats", duration: 45, reps: '20 reps', videoFile: 'squats.mp4', targetMuscles: ['Quads', 'Glutes', 'Hamstrings'] },
+                        { name: "Lunges", duration: 45, reps: '15 per leg', videoFile: 'lunges.mp4', targetMuscles: ['Quads', 'Glutes'] },
+                        { name: "Plank", duration: 60, reps: '60 sec hold', videoFile: 'plank.mp4', targetMuscles: ['Core', 'Shoulders'] },
+                        { name: "Rest", duration: 30, reps: 'Take a break!', videoFile: null, targetMuscles: [] },
+                    ]
+                },
+                'Gain Muscle': {
+                    icon: '💪',
+                    exercises: [
+                        { name: "Pike Push-ups", duration: 60, reps: '10-12 reps', videoFile: 'pike_push-ups.mp4', targetMuscles: ['Shoulders', 'Triceps'] },
+                        { name: "Bodyweight Squat", duration: 60, reps: '12 reps', videoFile: 'bodyweight_squat.mp4', targetMuscles: ['Quads', 'Glutes', 'Core'] },
+                        { name: "Doorway Rows", duration: 60, reps: '10 reps', videoFile: 'doorway_rows.mp4', targetMuscles: ['Back', 'Biceps'] },
+                        { name: "Good Mornings", duration: 60, reps: '15 reps', videoFile: 'good_mornings.mp4', targetMuscles: ['Hamstrings', 'Glutes', 'Back'] },
+                        { name: "Rest", duration: 60, reps: 'Take a break!', videoFile: null, targetMuscles: [] },
+                    ]
+                },
+                'Glutes Focus': {
+                    icon: '🍑',
+                    exercises: [
+                        { name: "Glute Bridges", duration: 45, reps: '20 reps', videoFile: 'glute_bridges.mp4', targetMuscles: ['Glutes', 'Hamstrings'] },
+                        { name: "Donkey Kicks", duration: 45, reps: '15 per leg', videoFile: 'donkey_kicks.mp4', targetMuscles: ['Glutes'] },
+                        { name: "Fire Hydrants", duration: 45, reps: '15 per leg', videoFile: 'fire_hydrants.mp4', targetMuscles: ['Glutes', 'Hips'] },
+                        { name: "Squat Jumps", duration: 45, reps: '15 reps', videoFile: 'squat_jumps.mp4', targetMuscles: ['Glutes', 'Quads', 'Calves'] },
+                        { name: "Rest", duration: 30, reps: 'Take a break!', videoFile: null, targetMuscles: [] },
+                    ]
+                },
+                'Core Strength': {
+                    icon: '🧘',
+                    exercises: [
+                        { name: "Crunches", duration: 45, reps: '20 reps', videoFile: 'crunches.mp4', targetMuscles: ['Core'] },
+                        { name: "Leg Raises", duration: 45, reps: '15 reps', videoFile: 'leg_raises.mp4', targetMuscles: ['Core'] },
+                        { name: "Plank", duration: 60, reps: '60 sec hold', videoFile: 'plank.mp4', targetMuscles: ['Core', 'Shoulders'] },
+                        { name: "Russian Twists", duration: 45, reps: '20 reps', videoFile: 'russian_twists.mp4', targetMuscles: ['Core'] },
+                        { name: "Rest", duration: 30, reps: 'Take a break!', videoFile: null, targetMuscles: [] },
+                    ]
+                },
+                'Full Body HIIT': {
+                    icon: '🚀',
+                    exercises: [
+                        { name: "Burpees", duration: 45, reps: '12 reps', videoFile: 'burpees.mp4', targetMuscles: ['Full Body'] },
+                        { name: "Squat Jumps", duration: 45, reps: '15 reps', videoFile: 'squat_jumps.mp4', targetMuscles: ['Glutes', 'Quads', 'Calves'] },
+                        { name: "Push-ups", duration: 45, reps: '15 reps', videoFile: 'push-ups.mp4', targetMuscles: ['Chest', 'Shoulders', 'Triceps'] },
+                        { name: "Mountain Climbers", duration: 45, reps: '45 sec', videoFile: 'mountain_climbers.mp4', targetMuscles: ['Core', 'Shoulders', 'Quads'] },
+                        { name: "Rest", duration: 30, reps: 'Take a break!', videoFile: null, targetMuscles: [] },
+                    ]
+                }
+            };
+
+            // --- UI & State Logic ---
+
+            function initialize() {
+                Object.keys(workouts).forEach((key, index) => {
+                    const workout = workouts[key];
+                    const card = document.createElement('div');
+                    card.className = 'category-card p-6 rounded-lg shadow-md cursor-pointer flex flex-col items-center justify-center text-center animate-fade-in-up';
+                    card.style.animationDelay = `${index * 100}ms`;
+                    card.innerHTML = `<span class="text-4xl mb-3">${workout.icon}</span><h3 class="font-semibold text-lg">${key}</h3>`;
+                    card.addEventListener('click', () => selectCategory(key));
+                    categoryGrid.appendChild(card);
+                });
+
+                backBtn.addEventListener('click', showMainView);
+                pausePlayBtn.addEventListener('click', togglePausePlay);
+                nextBtn.addEventListener('click', nextExercise);
+                prevBtn.addEventListener('click', prevExercise);
+            }
+
+            function selectCategory(categoryKey) {
+                currentWorkout = workouts[categoryKey];
+                currentWorkout.title = categoryKey;
+                currentExerciseIndex = 0;
+                isPaused = true;
+
+                showWorkoutView();
+                loadExercise();
+            }
+
+            function showMainView() {
+                workoutView.classList.add('hidden');
+                mainView.classList.remove('hidden');
+                stopTimer();
+                currentWorkout = null;
+                videoEl.src = '';
+            }
+
+            function showWorkoutView() {
+                mainView.classList.add('hidden');
+                workoutView.classList.remove('hidden');
+            }
+
+            function loadExercise() {
+                if (!currentWorkout) return;
+
+                const exercise = currentWorkout.exercises[currentExerciseIndex];
+                timeLeft = exercise.duration;
+
+                workoutTitleEl.textContent = currentWorkout.title;
+                exerciseNameEl.textContent = exercise.name;
+                exerciseRepsEl.textContent = exercise.reps;
+                updateTimerDisplay();
+
+                // Update video
+                if (exercise.videoFile) {
+                    videoEl.classList.remove('hidden');
+                    // Simplified video URL path
+                    const videoUrl = `videos/${exercise.videoFile}`;
+                    videoEl.src = videoUrl;
+                    videoEl.play().catch(e => console.error("Autoplay was prevented:", e));
+                } else {
+                    // Hide video for rest periods
+                    videoEl.classList.add('hidden');
+                    videoEl.src = '';
+                }
+
+                // Update muscle info
+                if (exercise.targetMuscles.length > 0) {
+                    muscleInfoEl.textContent = `Targeting: ${exercise.targetMuscles.join(', ')}`;
+                } else {
+                    muscleInfoEl.textContent = '';
+                }
+
+                pausePlayBtn.textContent = 'Start';
+                isPaused = true;
+                stopTimer();
+            }
+
+            function updateTimerDisplay() {
+                const minutes = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                const seconds = (timeLeft % 60).toString().padStart(2, '0');
+                timerEl.textContent = `${minutes}:${seconds}`;
+            }
+
+            function startTimer() {
+                if (timerInterval) clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) {
+                        nextExercise();
+                    }
+                }, 1000);
+            }
+
+            function stopTimer() {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+
+            function togglePausePlay() {
+                if (!currentWorkout) return;
+                isPaused = !isPaused;
+                if (isPaused) {
+                    stopTimer();
+                    videoEl.pause();
+                    pausePlayBtn.textContent = 'Resume';
+                    pausePlayBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+                    pausePlayBtn.classList.add('bg-cyan-500', 'hover:bg-cyan-600');
+                } else {
+                    startTimer();
+                    videoEl.play().catch(e => console.error("Play was prevented:", e));
+                    pausePlayBtn.textContent = 'Pause';
+                    pausePlayBtn.classList.remove('bg-cyan-500', 'hover:bg-cyan-600');
+                    pausePlayBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+                }
+            }
+
+            function nextExercise() {
+                if (!currentWorkout) return;
+                currentExerciseIndex = (currentExerciseIndex + 1) % currentWorkout.exercises.length;
+                loadExercise();
+                if (!isPaused) startTimer();
+            }
+
+
+
+            function prevExercise() {
+                if (!currentWorkout) return;
+                currentExerciseIndex--;
+                if (currentExerciseIndex < 0) {
+                    currentExerciseIndex = currentWorkout.exercises.length - 1;
+                }
+                loadExercise();
+                if (!isPaused) startTimer();
+            }
+
+            initialize();
+        });
+    </script>
+</body>
+</html>
+
